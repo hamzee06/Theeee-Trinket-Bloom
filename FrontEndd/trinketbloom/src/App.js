@@ -1,5 +1,8 @@
   import React, { useState, useEffect } from 'react';
 
+  // API URL from environment variable
+  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+
   // Image Popup Component (Existing, with responsiveness adjustments)
   const ImagePopup = ({ imageUrl, onClose }) => {
     if (!imageUrl) return null;
@@ -78,7 +81,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         };
 
         try {
-            const response = await fetch('http://localhost:3001/orders', {
+            const response = await fetch(`${API_URL}/orders`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(orderData),
@@ -534,7 +537,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
     // Handle checkout form submission (Now sending to backend)
     const handleCheckoutSubmit = async (orderDetails) => {
       try {
-        const response = await fetch('http://localhost:3001/orders', { // Ensure this matches your backend URL
+        const response = await fetch(`${API_URL}/orders`, { // Ensure this matches your backend URL
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -581,7 +584,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       }
 
       try {
-        const response = await fetch('http://localhost:3001/feedback', { // Ensure this matches your backend URL
+        const response = await fetch(`${API_URL}/feedback`, { // Ensure this matches your backend URL
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
