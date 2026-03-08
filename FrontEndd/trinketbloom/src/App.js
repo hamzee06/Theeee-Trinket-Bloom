@@ -436,7 +436,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
   // Main App Component (Responsive adjustments)
   const App = () => {
-    const [activeSection, setActiveSection] = useState('home');
     const [activeImage, setActiveImage] = useState(null);
     const [showTimeoutId, setShowTimeoutId] = useState(null);
     const [hideTimeoutId, setHideTimeoutId] = useState(null);
@@ -455,9 +454,8 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       const element = document.getElementById(id);
       if (element) {
         element.scrollIntoView({ behavior: 'smooth' });
-        setActiveSection(id);
       }
-    };
+     };
 
     // Functions to manage the image popup with refined delays (Existing)
     const handleImageHover = (imageUrl) => {
@@ -1423,7 +1421,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               }}>
                 <p>Email: <a href="mailto:thetrinketbloom@gmail.com" style={{ color: '#800080', textDecoration: 'none' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>thetrinketbloom@gmail.com</a></p>
                 <p>Phone: <a href="tel:+92 3364606346" style={{ color: '#800080', textDecoration: 'none' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>+92 336 4606346</a></p>
-                <p>Follow us on: <a href="https://www.instagram.com/the.trinketbloom/" style={{ color: '#800080', textDecoration: 'none' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>Instagram</a> | <a href="#" style={{ color: '#800080', textDecoration: 'none' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>Facebook</a></p>
+                <p>Follow us on: <a href="https://www.instagram.com/the.trinketbloom/" style={{ color: '#800080', textDecoration: 'none' }} onMouseOver={(e) => e.target.style.textDecoration = 'underline'} onMouseOut={(e) => e.target.style.textDecoration = 'none'}>Instagram</a> | <span style={{ color: '#800080', cursor: 'not-allowed', opacity: 0.6 }}>Facebook</span></p>
               </div>
             </div>
           </div>
