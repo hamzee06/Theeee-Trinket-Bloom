@@ -7,10 +7,7 @@ const connectDB = async () => {
     // Use MONGODB_URI from environment variables
     const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/trinketbloom';
     
-    await mongoose.connect(mongoURI, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    await mongoose.connect(mongoURI);
     
     console.log('Connected to MongoDB database');
   } catch (err) {
