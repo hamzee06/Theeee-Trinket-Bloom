@@ -1,41 +1,37 @@
-const Feedback = require('../models/Feedback');
-const connectDB = require('../db');
+const db = require('../db');
 
 // Controller function to get all feedback from the database.
-exports.getAllFeedback = async (req, res) => {
-    try {
-        await connectDB();
-        const feedback = await Feedback.find().sort({ createdAt: -1 });
-        res.status(200).json({ data: feedback });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+exports.getAllFeedback = (req, res) => {
+    const sql = 'SELECT * FROM feedback ORDER BY createdAt DESC';
+    db.all(sql, [], (err, rows) => {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
+        res.status(200).json({ data: rows });
+    });
 };
 
 // Controller function to create new feedback in the database.
-exports.createFeedback = async (req, res) => {
+exports.createFeedback = (req, res) => {
     const { name, email, message } = req.body;
 
-    // Validate that all required fields are present.
     if (!name || !email || !message) {
-        return res.status(400).json({ error: 'Please provide name, email, and message.' });
+        res.status(400).json({ error: 'Please provide name, email, and message.' });
+        return;
     }
 
-    try {
-        await connectDB();
-        const newFeedback = new Feedback({
-            name,
-            email,
-            message
-        });
+    const sql = 'INSERT INTO feedback (name, email, message) VALUES (?, ?, ?)';
+    const params = [name, email, message];
 
-        const savedFeedback = await newFeedback.save();
-        
+    db.run(sql, params, function(err) {
+        if (err) {
+            res.status(500).json({ error: err.message });
+            return;
+        }
         res.status(201).json({
             message: 'Feedback created successfully',
-            id: savedFeedback._id
+            id: this.lastID
         });
-    } catch (err) {
-        res.status(500).json({ error: err.message });
-    }
+    });
 };
