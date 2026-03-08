@@ -1,17 +1,17 @@
 const express = require('express');
 const cors = require('cors');
-const path = require('path');
+require('dotenv').config();
 
 const app = express();
-const port = 3001;
+const port = process.env.PORT || 3001;
 
 // Middlewares
 app.use(cors());
 app.use(express.json());
 
-// Import the database connection from the new db.js file.
-// The table creation is now handled inside db.js.
-const db = require('./db');
+// Import and connect to MongoDB
+const connectDB = require('./db');
+connectDB();
 
 // Import and use routers
 const ordersRouter = require('./Routers/orderRouter');
@@ -20,6 +20,11 @@ const feedbackRouter = require('./Routers/feedbackRouter');
 // Attach the routers to their respective endpoints.
 app.use('/orders', ordersRouter);
 app.use('/feedback', feedbackRouter);
+
+// Health check endpoint
+app.get('/', (req, res) => {
+  res.json({ message: 'Trinket Bloom API is running!' });
+});
 
 // Catch-all for any unhandled routes
 app.use((req, res, next) => {
@@ -30,4 +35,6 @@ app.use((req, res, next) => {
 app.listen(port, () => {
   console.log(`Backend server running at http://localhost:${port}`);
 });
+
+module.exports = app;
 
