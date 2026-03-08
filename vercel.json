@@ -1,0 +1,11 @@
+{
+  "buildCommand": "cd FrontEndd/trinketbloom && npm run build",
+  "outputDirectory": "FrontEndd/trinketbloom/build",
+  "installCommand": "cd FrontEndd/trinketbloom && npm install",
+  "rewrites": [
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
