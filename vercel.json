@@ -1,7 +1,8 @@
 {
-  "buildCommand": "cd FrontEndd/trinketbloom && npm run build",
+  "buildCommand": "cd FrontEndd/trinketbloom && npm install && npm run build",
   "outputDirectory": "FrontEndd/trinketbloom/build",
-  "installCommand": "cd FrontEndd/trinketbloom && npm install",
+  "installCommand": "npm install --prefix FrontEndd/trinketbloom",
+  "framework": "create-react-app",
   "rewrites": [
     {
       "source": "/(.*)",
