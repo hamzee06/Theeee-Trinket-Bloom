@@ -1,8 +1,10 @@
 const Order = require('../models/Order');
+const connectDB = require('../db');
 
 // Controller function to get all orders from the database.
 exports.getAllOrders = async (req, res) => {
     try {
+        await connectDB();
         const orders = await Order.find().sort({ orderDate: -1 });
         res.status(200).json({ data: orders });
     } catch (err) {
@@ -20,6 +22,7 @@ exports.createOrder = async (req, res) => {
     }
 
     try {
+        await connectDB();
         const newOrder = new Order({
             customerName: name,
             address,

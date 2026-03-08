@@ -1,8 +1,10 @@
 const Feedback = require('../models/Feedback');
+const connectDB = require('../db');
 
 // Controller function to get all feedback from the database.
 exports.getAllFeedback = async (req, res) => {
     try {
+        await connectDB();
         const feedback = await Feedback.find().sort({ createdAt: -1 });
         res.status(200).json({ data: feedback });
     } catch (err) {
@@ -20,6 +22,7 @@ exports.createFeedback = async (req, res) => {
     }
 
     try {
+        await connectDB();
         const newFeedback = new Feedback({
             name,
             email,
