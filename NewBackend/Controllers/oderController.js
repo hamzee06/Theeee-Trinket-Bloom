@@ -20,9 +20,11 @@ exports.getAllOrders = (req, res) => {
 
 // Controller function to create a new order in the database.
 exports.createOrder = (req, res) => {
+    console.log('Received order request:', req.body);
     const { name, address, phone, paymentMethod, items, totalprice } = req.body;
 
     if (!name || !address || !phone || !paymentMethod || !items || !totalprice) {
+        console.log('Missing fields:', { name: !!name, address: !!address, phone: !!phone, paymentMethod: !!paymentMethod, items: !!items, totalprice: !!totalprice });
         res.status(400).json({ error: 'All fields are required.' });
         return;
     }

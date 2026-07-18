@@ -1,7 +1,9 @@
   import React, { useState, useEffect } from 'react';
 
-  // API URL from environment variable
-  const API_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001';
+  // API URL - use production backend in production, otherwise use env variable or localhost
+  const API_URL = process.env.NODE_ENV === 'production' 
+    ? 'https://trinket-bloom-backend.vercel.app'
+    : (process.env.REACT_APP_API_URL || 'http://localhost:3001');
 
   // Image Popup Component (Existing, with responsiveness adjustments)
   const ImagePopup = ({ imageUrl, onClose }) => {
@@ -80,6 +82,9 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             totalprice: totalPrice, // Send the totalPrice from props
         };
 
+        console.log('Submitting order to:', `${API_URL}/orders`);
+        console.log('Order data:', orderData);
+
         try {
             const response = await fetch(`${API_URL}/orders`, {
                 method: 'POST',
@@ -87,7 +92,9 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 body: JSON.stringify(orderData),
             });
 
+            console.log('Response status:', response.status);
             const data = await response.json();
+            console.log('Response data:', data);
             if (response.ok) {
                 // Instead of using a browser alert, we set a success message.
                 setErrorMessage('Order created successfully!');
@@ -98,6 +105,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             }
         } catch (error) {
             console.error('Error submitting order:', error);
+            console.error('Error details:', error.message, error.stack);
             setErrorMessage('Server error. Please try again.');
         }
     };
