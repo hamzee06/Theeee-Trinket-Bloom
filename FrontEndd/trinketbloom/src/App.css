@@ -36,3 +36,277 @@
     transform: rotate(360deg);
   }
 }
+
+/* Base hidden state for anime.js-driven entrance/scroll-reveal animations.
+   Applied via CSS (not JS) so elements never flash visible before the
+   animation engine takes over on mount. */
+.anim-hidden {
+  opacity: 0;
+}
+
+.hero-bg-image {
+  will-change: transform;
+}
+
+.hero-title [data-char] {
+  display: inline-block;
+  will-change: transform, opacity;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .anim-hidden {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .hero-bg-image {
+    transform: none !important;
+  }
+
+  .preloader {
+    display: none !important;
+  }
+}
+
+/* ---------------------------------------------------------------------- */
+/* Preloader / intro curtain                                              */
+/* ---------------------------------------------------------------------- */
+.preloader {
+  position: fixed;
+  inset: 0;
+  z-index: 5000;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.25rem;
+  background: linear-gradient(135deg, #6A0DAD, #800080 55%, #4A0050);
+}
+
+.preloader-word {
+  color: #fff;
+  font-weight: 800;
+  font-size: 1.6rem;
+  letter-spacing: 0.14em;
+  text-align: center;
+  padding: 0 1rem;
+}
+
+.preloader-word [data-char] {
+  display: inline-block;
+}
+
+.preloader-bar {
+  width: 200px;
+  max-width: 60vw;
+  height: 3px;
+  background: rgba(255, 255, 255, 0.25);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.preloader-bar-fill {
+  height: 100%;
+  width: 0%;
+  background: #FFD1DC;
+  border-radius: 999px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Scroll progress bar                                                    */
+/* ---------------------------------------------------------------------- */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 2000;
+  pointer-events: none;
+}
+
+.scroll-progress-fill {
+  height: 100%;
+  width: 100%;
+  background: linear-gradient(90deg, #EC4899, #6A0DAD);
+  transform-origin: left;
+  transform: scaleX(0);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Navbar (base state + scrolled state)                                   */
+/* ---------------------------------------------------------------------- */
+.site-nav {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 50;
+  background-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  padding: 1rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  border-radius: 0 0 1.5rem 1.5rem;
+  box-sizing: border-box;
+  transition: padding 0.35s ease, background-color 0.35s ease,
+    box-shadow 0.35s ease, backdrop-filter 0.35s ease;
+}
+
+.site-nav.nav-scrolled {
+  padding: 0.5rem 1.5rem;
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 8px 24px rgba(74, 0, 80, 0.18);
+}
+
+/* ---------------------------------------------------------------------- */
+/* Hero ambient gradient blobs                                            */
+/* ---------------------------------------------------------------------- */
+.hero-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(70px);
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.5;
+}
+
+.hero-blob-1 {
+  width: 380px;
+  height: 380px;
+  background: #EC4899;
+  top: -80px;
+  left: -80px;
+}
+
+.hero-blob-2 {
+  width: 320px;
+  height: 320px;
+  background: #6A0DAD;
+  bottom: -100px;
+  right: -60px;
+}
+
+.hero-blob-3 {
+  width: 240px;
+  height: 240px;
+  background: #FFD1DC;
+  top: 45%;
+  right: 12%;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Marquee ribbon                                                         */
+/* ---------------------------------------------------------------------- */
+.marquee {
+  overflow: hidden;
+  background: #4A0050;
+  padding: 0.9rem 0;
+  white-space: nowrap;
+}
+
+.marquee-track {
+  display: inline-flex;
+  will-change: transform;
+}
+
+.marquee-item {
+  color: #FFD1DC;
+  font-weight: 700;
+  font-size: 1.05rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  padding-right: 3rem;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Section heading accent underline                                       */
+/* ---------------------------------------------------------------------- */
+.heading-underline {
+  display: block;
+  width: 0%;
+  max-width: 70px;
+  height: 4px;
+  margin: -1.25rem auto 1.75rem;
+  background: linear-gradient(90deg, #EC4899, #6A0DAD);
+  border-radius: 999px;
+}
+
+/* ---------------------------------------------------------------------- */
+/* About section stat counters                                            */
+/* ---------------------------------------------------------------------- */
+.about-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin-top: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 2rem;
+  font-weight: 800;
+  color: #4A0050;
+}
+
+.stat-label {
+  font-size: 0.8rem;
+  color: #6A0DAD;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---------------------------------------------------------------------- */
+/* Product card: 3D tilt + image zoom + overlay                           */
+/* ---------------------------------------------------------------------- */
+.products-grid {
+  perspective: 1200px;
+}
+
+.product-card {
+  transform-style: preserve-3d;
+}
+
+.card-image-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 1rem 1rem 0 0;
+}
+
+.card-image-wrap img {
+  transition: transform 0.5s ease;
+}
+
+.product-card:hover .card-image-wrap img {
+  transform: scale(1.1);
+}
+
+.card-image-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(74, 0, 80, 0.75), transparent 60%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 0.75rem;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  color: #fff;
+  font-weight: 600;
+  font-size: 0.85rem;
+  letter-spacing: 0.05em;
+  pointer-events: none;
+}
+
+.product-card:hover .card-image-overlay {
+  opacity: 1;
+}

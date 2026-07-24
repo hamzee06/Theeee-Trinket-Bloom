@@ -1,4 +1,22 @@
-  import React, { useState, useEffect } from 'react';
+  import React, { useState, useEffect, useRef } from 'react';
+  import './App.css';
+  import {
+    initSiteAnimations,
+    initSmoothScroll,
+    runPreloaderIntro,
+    tiltCard,
+    resetTiltCard,
+    magnetMove,
+    magnetLeave,
+  } from './animations';
+
+  // Animated intro curtain shown once on first load (Existing pattern: small standalone component)
+  const Preloader = React.forwardRef((props, ref) => (
+    <div ref={ref} className="preloader">
+      <div className="preloader-word">THE TRINKET BLOOM</div>
+      <div className="preloader-bar"><div className="preloader-bar-fill" /></div>
+    </div>
+  ));
 
   // API URL - use production backend in production, otherwise use env variable or localhost
   const API_URL = process.env.NODE_ENV === 'production' 
@@ -447,6 +465,9 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
   // Main App Component (Responsive adjustments)
   const App = () => {
+    const rootRef = useRef(null);
+    const preloaderRef = useRef(null);
+    const [isLoading, setIsLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(null);
     const [showTimeoutId, setShowTimeoutId] = useState(null);
     const [hideTimeoutId, setHideTimeoutId] = useState(null);
@@ -508,6 +529,24 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         }
       };
     }, [showTimeoutId, hideTimeoutId]);
+
+    // Animated intro curtain — plays once, then reveals the fully-animated hero underneath
+    useEffect(() => {
+      const controller = runPreloaderIntro(preloaderRef.current, () => setIsLoading(false));
+      return () => controller.revert();
+    }, []);
+
+    // Buttery inertial scrolling, kept in sync with every anime.js scroll trigger
+    useEffect(() => {
+      const lenis = initSmoothScroll();
+      return () => lenis.destroy();
+    }, []);
+
+    // Set up all entrance + scroll-triggered animations (anime.js)
+    useEffect(() => {
+      const scope = initSiteAnimations(rootRef.current);
+      return () => scope.revert();
+    }, []);
 
     // Wishlist functions (Local state management)
     const addToWishlist = (product, quantity = 1) => {
@@ -726,6 +765,9 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       },
     ];
 
+    // Real, derived (not fabricated) numbers used for the About section stat counters
+    const categoryCount = new Set(allProducts.map((p) => p.category)).size;
+
     // Filter products based on selected category (Existing)
     let currentProducts = selectedCategory === 'all'
       ? allProducts
@@ -755,30 +797,21 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
     }
 
     return (
-      <div style={{
+      <div ref={rootRef} style={{
         minHeight: '100vh',
         background: '#800080', // Solid purple background
         fontFamily: 'Inter, sans-serif',
         color: '#333',
         boxSizing: 'border-box', // Global box-sizing
       }}>
+        {/* Animated intro curtain (Existing pattern: conditionally rendered overlay) */}
+        {isLoading && <Preloader ref={preloaderRef} />}
+
+        {/* Scroll progress indicator */}
+        <div className="scroll-progress"><div className="scroll-progress-fill" /></div>
+
         {/* Navigation Bar */}
-        <nav style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          zIndex: 50,
-          backgroundColor: 'rgba(255, 255, 255, 0.9)',
-          boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-          padding: '1rem 1.5rem', // Adjusted padding
-          display: 'flex',
-          flexDirection: 'column', // Stack on small screens
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          borderRadius: '0 0 1.5rem 1.5rem',
-          boxSizing: 'border-box',
-        }}>
+        <nav className="site-nav anim-hidden">
           <div style={{
             fontSize: '1.2rem', // Adjusted font size for mobile
             fontWeight: 'bold',
@@ -799,7 +832,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             justifyContent: 'center', // Center items when wrapped
             width: '100%',
           }}>
-            <li>
+            <li className="nav-link-item">
               <button
                 onClick={() => scrollToSection('home')}
                 style={{
@@ -819,7 +852,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 Home
               </button>
             </li>
-            <li>
+            <li className="nav-link-item">
               <button
                 onClick={() => scrollToSection('products')}
                 style={{
@@ -839,7 +872,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 Products
               </button>
             </li>
-            <li>
+            <li className="nav-link-item">
               <button
                 onClick={() => scrollToSection('about')}
                 style={{
@@ -859,7 +892,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 About
               </button>
             </li>
-            <li>
+            <li className="nav-link-item">
               <button
                 onClick={() => scrollToSection('contact')}
                 style={{
@@ -880,7 +913,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               </button>
             </li>
             {/* Wishlist Button in Nav (Existing) */}
-            <li>
+            <li className="nav-link-item">
               <button
                 onClick={() => setIsWishlistOpen(true)}
                 style={{
@@ -946,7 +979,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
 
         {/* Hero Section (Responsive adjustments) */}
-        <section id="home" style={{
+        <section id="home" className="hero-section" style={{
           position: 'relative',
           height: '100vh',
           display: 'flex',
@@ -959,6 +992,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
           boxSizing: 'border-box',
         }}>
           <img
+            className="hero-bg-image"
             src="/your_hero_background_image.jpg" // Placeholder for hero background
             alt="Resin Art Background"
             style={{
@@ -966,12 +1000,15 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               top: 0,
               left: 0,
               width: '100%',
-              height: '100%',
+              height: '110%',
               objectFit: 'cover',
               opacity: 0.7,
             }}
             onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/1920x1080/E0BBE4/FFFFFF?text=Beautiful+Resin+Art"; }}
           />
+          <div className="hero-blob hero-blob-1" />
+          <div className="hero-blob hero-blob-2" />
+          <div className="hero-blob hero-blob-3" />
           <div style={{
             position: 'relative',
             zIndex: 10,
@@ -983,25 +1020,24 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             margin: '0 0.75rem', // Adjusted margin
             boxSizing: 'border-box',
           }}>
-            <h1 style={{
+            <h1 className="hero-title anim-hidden" style={{
               fontSize: '2rem', // Adjusted for mobile
               fontWeight: '800',
               color: '#4A0050',
               lineHeight: '1.25',
               marginBottom: '0.75rem', // Adjusted margin
-              animation: 'fadeInDown 1s ease-out',
             }}>
               Exquisite Resin Art Jewelry
             </h1>
-            <p style={{
+            <p className="hero-subtitle anim-hidden" style={{
               fontSize: '1rem', // Adjusted for mobile
               color: '#4A5568',
               marginBottom: '1.5rem', // Adjusted margin
-              animation: 'fadeInUp 1s ease-out',
             }}>
               Handcrafted pendants, jhumkas, rings, and bracelets that capture the essence of beauty.
             </p>
             <button
+              className="hero-cta anim-hidden"
               onClick={() => scrollToSection('products')}
               style={{
                 backgroundColor: '#800080',
@@ -1010,25 +1046,36 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 padding: '0.6rem 1.5rem', // Adjusted padding
                 borderRadius: '9999px',
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                transition: 'all 0.3s ease-in-out',
+                transition: 'background-color 0.3s ease-in-out',
                 cursor: 'pointer',
                 border: 'none',
-                animation: 'bounceIn 1s ease-out',
                 fontSize: '0.9rem', // Adjusted font size
               }}
-              onMouseOver={(e) => {
-                e.target.style.backgroundColor = '#6A0DAD';
-                e.target.style.transform = 'scale(1.05)';
-              }}
+              onMouseMove={magnetMove}
+              onMouseOver={(e) => { e.target.style.backgroundColor = '#6A0DAD'; }}
               onMouseOut={(e) => {
                 e.target.style.backgroundColor = '#800080';
-                e.target.style.transform = 'scale(1)';
+                magnetLeave(e);
               }}
             >
               Explore Our Collection
             </button>
           </div>
         </section>
+
+        {/* Marquee ribbon */}
+        <div className="marquee">
+          <div className="marquee-track">
+            {Array.from({ length: 2 }).map((_, i) => (
+              <React.Fragment key={i}>
+                <span className="marquee-item">✦ Handcrafted Resin Art</span>
+                <span className="marquee-item">✦ One-of-a-Kind Designs</span>
+                <span className="marquee-item">✦ Made With Love</span>
+                <span className="marquee-item">✦ Premium Quality Resin</span>
+              </React.Fragment>
+            ))}
+          </div>
+        </div>
 
         {/* Products Section (Responsive adjustments) */}
         <section id="products" style={{
@@ -1042,7 +1089,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             padding: '0 1rem', // Adjusted padding
             boxSizing: 'border-box',
           }}>
-            <h2 style={{
+            <h2 className="section-heading anim-hidden" style={{
               fontSize: '2rem', // Adjusted font size
               fontWeight: 'bold',
               textAlign: 'center',
@@ -1051,9 +1098,10 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             }}>
               Our Unique Creations
             </h2>
+            <span className="heading-underline anim-hidden" />
 
             {/* Search and Sort Controls (Responsive adjustments) */}
-            <div style={{
+            <div className="products-controls anim-hidden" style={{
               display: 'flex',
               flexDirection: 'column', // Stack on small screens
               justifyContent: 'center',
@@ -1151,7 +1199,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               />
             </div>
 
-            <div style={{
+            <div className="products-grid" style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', // Adjusted minmax for smaller cards on mobile
               gap: '1.5rem', // Adjusted gap
@@ -1199,7 +1247,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             gap: '1.5rem', // Adjusted gap
             boxSizing: 'border-box',
           }}>
-            <div style={{
+            <div className="about-text anim-hidden" style={{
               width: '100%',
               marginBottom: '1rem',
             }}>
@@ -1229,8 +1277,22 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               }}>
                 Our journey began with a love for creativity and a desire to bring unique, personalized accessories to life. We pour our heart into every piece, ensuring it's not just beautiful but also durable and meaningful. Thank you for supporting our artistic endeavor!
               </p>
+              <div className="about-stats">
+                <div className="stat-item anim-hidden">
+                  <span className="stat-number" data-target={allProducts.length}>0</span>
+                  <span className="stat-label">Unique Designs</span>
+                </div>
+                <div className="stat-item anim-hidden">
+                  <span className="stat-number" data-target={categoryCount}>0</span>
+                  <span className="stat-label">Collections</span>
+                </div>
+                <div className="stat-item anim-hidden">
+                  <span className="stat-number" data-target="100" data-suffix="%">0</span>
+                  <span className="stat-label">Handmade</span>
+                </div>
+              </div>
             </div>
-            <div style={{
+            <div className="about-image anim-hidden" style={{
               width: '100%',
               display: 'flex',
               justifyContent: 'center',
@@ -1263,7 +1325,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             padding: '0 1rem', // Adjusted padding
             boxSizing: 'border-box',
           }}>
-            <h2 style={{
+            <h2 className="section-heading anim-hidden" style={{
               fontSize: '2rem', // Adjusted font size
               fontWeight: 'bold',
               textAlign: 'center',
@@ -1272,7 +1334,8 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             }}>
               Get in Touch
             </h2>
-            <div style={{
+            <span className="heading-underline anim-hidden" />
+            <div className="contact-card anim-hidden" style={{
               maxWidth: '90%', // Fluid width
               margin: '0 auto',
               background: 'linear-gradient(to bottom right, #E0BBE4, #FFD1DC)',
@@ -1281,7 +1344,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
               boxShadow: '0 10px 15px rgba(0, 0, 0, 0.1)',
               boxSizing: 'border-box',
             }}>
-              <p style={{
+              <p className="contact-field anim-hidden" style={{
                 fontSize: '1rem', // Adjusted font size
                 color: '#4A5568',
                 textAlign: 'center',
@@ -1294,7 +1357,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 flexDirection: 'column',
                 gap: '1rem', // Adjusted gap
               }}>
-                <div>
+                <div className="contact-field anim-hidden">
                   <label htmlFor="name" style={{
                     display: 'block',
                     color: '#4A5568',
@@ -1328,7 +1391,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                     placeholder="Your Name"
                   />
                 </div>
-                <div>
+                <div className="contact-field anim-hidden">
                   <label htmlFor="email" style={{
                     display: 'block',
                     color: '#4A5568',
@@ -1362,7 +1425,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                     placeholder="your.email@example.com"
                   />
                 </div>
-                <div>
+                <div className="contact-field anim-hidden">
                   <label htmlFor="message" style={{
                     display: 'block',
                     color: '#4A5568',
@@ -1399,6 +1462,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 </div>
                 <button
                   type="submit"
+                  className="contact-field anim-hidden"
                   style={{
                     width: '100%',
                     backgroundColor: '#800080',
@@ -1439,7 +1503,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         </section>
 
         {/* Footer (Existing, responsive adjustments) */}
-        <footer style={{
+        <footer className="site-footer anim-hidden" style={{
           backgroundColor: '#4A0050',
           color: 'white',
           padding: '1.5rem 0', // Adjusted padding
@@ -1491,6 +1555,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
     return (
       <button
+        className="category-btn anim-hidden"
         onClick={() => onClick(category)}
         style={{
           backgroundColor: isActive ? '#6A0DAD' : '#E0BBE4',
@@ -1530,31 +1595,36 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
     return (
       <div
+        className="product-card anim-hidden"
+        onMouseMove={tiltCard}
+        onMouseLeave={resetTiltCard}
         style={{
           backgroundColor: 'white',
           borderRadius: '1rem',
           boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
           overflow: 'hidden',
-          transition: 'transform 0.3s ease, box-shadow 0.3s ease',
           cursor: 'pointer',
           boxSizing: 'border-box',
           ...customStyle
         }}
       >
-        <img
-          src={imageUrl}
-          alt={name}
-          style={{
-            width: '100%',
-            height: '10rem', // Slightly smaller height for mobile cards
-            objectFit: 'cover',
-            borderRadius: '1rem 1rem 0 0',
-            ...imageCustomStyle
-          }}
-          onMouseEnter={() => onImageHover(imageUrl)}
-          onMouseLeave={onImageLeave}
-          onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x300/CCCCCC/333333?text=Product+Image"; }}
-        />
+        <div className="card-image-wrap">
+          <img
+            src={imageUrl}
+            alt={name}
+            style={{
+              width: '100%',
+              height: '10rem', // Slightly smaller height for mobile cards
+              objectFit: 'cover',
+              borderRadius: '1rem 1rem 0 0',
+              ...imageCustomStyle
+            }}
+            onMouseEnter={() => onImageHover(imageUrl)}
+            onMouseLeave={onImageLeave}
+            onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x300/CCCCCC/333333?text=Product+Image"; }}
+          />
+          <div className="card-image-overlay">View Details</div>
+        </div>
         <div style={{ padding: '1rem' }}> {/* Adjusted padding */}
           <h3 style={{
             fontSize: '1.2rem', // Adjusted font size
