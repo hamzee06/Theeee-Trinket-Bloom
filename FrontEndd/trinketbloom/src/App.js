@@ -131,8 +131,10 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                     address,
                     phone,
                     paymentMethod,
-                    items: JSON.stringify(wishlistItems),
-                    totalPrice,
+                    items: wishlistItems
+                        .map((item) => `${item.quantity}x ${item.name} - ${item.price} each`)
+                        .join('\n'),
+                    totalPrice: `Rs. ${totalPrice.toFixed(2)}`,
                 });
             } else {
                 setErrorMessage(data.error || 'Something went wrong.');
@@ -1440,7 +1442,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         {isCheckoutOpen && (
           <CheckoutForm
             wishlistItems={wishlist}
-            totalPrice={wishlist.reduce((sum, item) => parseFloat(item.price.replace('Rs. ', '')) * item.quantity, 0)}
+            totalPrice={wishlist.reduce((sum, item) => sum + parseFloat(item.price.replace('Rs. ', '')) * item.quantity, 0)}
             onClose={() => setIsCheckoutOpen(false)}
           />
         )}
