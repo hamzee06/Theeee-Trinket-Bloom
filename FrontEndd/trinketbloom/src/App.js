@@ -485,6 +485,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
   const HomePage = ({ initialScrollTarget }) => {
     const rootRef = useRef(null);
     const preloaderRef = useRef(null);
+    const lenisRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
     const [activeImage, setActiveImage] = useState(null);
     const [showTimeoutId, setShowTimeoutId] = useState(null);
@@ -543,6 +544,24 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       setHideTimeoutId(newHideTimeout);
     };
 
+    // Lock background scroll while the wishlist/checkout modal is open, so
+    // touch/wheel scrolling only moves the modal's own content, not the page
+    // behind it. Lenis drives scrolling programmatically (independent of CSS
+    // `overflow`), so it needs to be paused explicitly too, not just the body.
+    useEffect(() => {
+      if (isWishlistOpen || isCheckoutOpen) {
+        document.body.style.overflow = 'hidden';
+        lenisRef.current?.stop?.();
+      } else {
+        document.body.style.overflow = '';
+        lenisRef.current?.start?.();
+      }
+      return () => {
+        document.body.style.overflow = '';
+        lenisRef.current?.start?.();
+      };
+    }, [isWishlistOpen, isCheckoutOpen]);
+
     // Clean up timeouts on component unmount (Existing)
     useEffect(() => {
       return () => {
@@ -564,7 +583,11 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
     // Buttery inertial scrolling, kept in sync with every anime.js scroll trigger
     useEffect(() => {
       const lenis = initSmoothScroll();
-      return () => lenis.destroy();
+      lenisRef.current = lenis;
+      return () => {
+        lenisRef.current = null;
+        lenis.destroy();
+      };
     }, []);
 
     // Set up all entrance + scroll-triggered animations (anime.js)
