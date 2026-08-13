@@ -1,25 +1,25 @@
-const db = require('../db');
+const { getDb, ensureOrdersTable } = require('../db');
 
 // Controller function to get all orders from the database.
-exports.getAllOrders = (req, res) => {
-    const sql = 'SELECT * FROM orders ORDER BY orderDate DESC';
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
+exports.getAllOrders = async (req, res) => {
+    try {
+        await ensureOrdersTable();
+        const result = await getDb().execute('SELECT * FROM orders ORDER BY orderDate DESC');
 
-        const ordersWithParsedItems = rows.map(row => ({
+        const ordersWithParsedItems = result.rows.map(row => ({
           ...row,
           items: JSON.parse(row.items)
         }));
 
         res.status(200).json({ data: ordersWithParsedItems });
-    });
+    } catch (err) {
+        console.error('Error fetching orders:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 };
 
 // Controller function to create a new order in the database.
-exports.createOrder = (req, res) => {
+exports.createOrder = async (req, res) => {
     console.log('Received order request:', req.body);
     const { name, address, phone, paymentMethod, items, totalprice } = req.body;
 
@@ -30,21 +30,21 @@ exports.createOrder = (req, res) => {
     }
 
     const itemsString = JSON.stringify(items);
-    const sql = 'INSERT INTO orders (customerName, address, phone, paymentMethod, items, totalPrice) VALUES (?, ?, ?, ?, ?, ?)';
-    const params = [name, address, phone, paymentMethod, itemsString, totalprice];
 
-    db.run(sql, params, function(err) {
-        if (err) {
-            console.error('Error inserting order:', err.message);
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        console.log('Order inserted successfully with ID:', this.lastID);
+    try {
+        await ensureOrdersTable();
+        const result = await getDb().execute({
+            sql: 'INSERT INTO orders (customerName, address, phone, paymentMethod, items, totalPrice) VALUES (?, ?, ?, ?, ?, ?)',
+            args: [name, address, phone, paymentMethod, itemsString, totalprice],
+        });
+
+        console.log('Order inserted successfully with ID:', result.lastInsertRowid);
         res.status(201).json({
             message: 'Order created successfully',
-            id: this.lastID
+            id: Number(result.lastInsertRowid)
         });
-    });
+    } catch (err) {
+        console.error('Error inserting order:', err.message);
+        res.status(500).json({ error: err.message });
+    }
 };
-
-

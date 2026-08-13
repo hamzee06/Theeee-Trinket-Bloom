@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 
@@ -7,9 +8,6 @@ const port = 3001;
 // Middlewares
 app.use(cors());
 app.use(express.json());
-
-// Import the database connection
-const db = require('./db');
 
 // Import and use routers
 const ordersRouter = require('./Routers/orderRouter');

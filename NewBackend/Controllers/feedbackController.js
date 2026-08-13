@@ -1,19 +1,18 @@
-const db = require('../db');
+const { getDb, ensureFeedbackTable } = require('../db');
 
 // Controller function to get all feedback from the database.
-exports.getAllFeedback = (req, res) => {
-    const sql = 'SELECT * FROM feedback ORDER BY createdAt DESC';
-    db.all(sql, [], (err, rows) => {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
-        res.status(200).json({ data: rows });
-    });
+exports.getAllFeedback = async (req, res) => {
+    try {
+        await ensureFeedbackTable();
+        const result = await getDb().execute('SELECT * FROM feedback ORDER BY createdAt DESC');
+        res.status(200).json({ data: result.rows });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };
 
 // Controller function to create new feedback in the database.
-exports.createFeedback = (req, res) => {
+exports.createFeedback = async (req, res) => {
     const { name, email, message } = req.body;
 
     if (!name || !email || !message) {
@@ -21,17 +20,18 @@ exports.createFeedback = (req, res) => {
         return;
     }
 
-    const sql = 'INSERT INTO feedback (name, email, message) VALUES (?, ?, ?)';
-    const params = [name, email, message];
+    try {
+        await ensureFeedbackTable();
+        const result = await getDb().execute({
+            sql: 'INSERT INTO feedback (name, email, message) VALUES (?, ?, ?)',
+            args: [name, email, message],
+        });
 
-    db.run(sql, params, function(err) {
-        if (err) {
-            res.status(500).json({ error: err.message });
-            return;
-        }
         res.status(201).json({
             message: 'Feedback created successfully',
-            id: this.lastID
+            id: Number(result.lastInsertRowid)
         });
-    });
+    } catch (err) {
+        res.status(500).json({ error: err.message });
+    }
 };

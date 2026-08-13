@@ -1,4 +1,5 @@
   import React, { useState, useEffect, useRef } from 'react';
+  import { Routes, Route, Navigate, Link } from 'react-router-dom';
   import './App.css';
   import {
     initSiteAnimations,
@@ -9,6 +10,11 @@
     magnetMove,
     magnetLeave,
   } from './animations';
+  import Seo from './components/Seo';
+  import ProductDetailPage from './pages/ProductDetailPage';
+  import { allProducts } from './data/products';
+  import { buildOrganizationJsonLd } from './constants/site';
+  import { sendWeb3FormsNotification } from './web3forms';
 
   // Animated intro curtain shown once on first load (Existing pattern: small standalone component)
   const Preloader = React.forwardRef((props, ref) => (
@@ -117,7 +123,17 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 // Instead of using a browser alert, we set a success message.
                 setErrorMessage('Order created successfully!');
                 // You can add a delay before closing the modal for the user to see the success message.
-                setTimeout(onClose, 2000); 
+                setTimeout(onClose, 2000);
+
+                sendWeb3FormsNotification({
+                    subject: `New order from ${name}`,
+                    name,
+                    address,
+                    phone,
+                    paymentMethod,
+                    items: JSON.stringify(wishlistItems),
+                    totalPrice,
+                });
             } else {
                 setErrorMessage(data.error || 'Something went wrong.');
             }
@@ -463,8 +479,10 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
   };
 
 
-  // Main App Component (Responsive adjustments)
-  const App = () => {
+  // Main storefront page — rendered at "/", and reused (auto-scrolled to a
+  // section) for the "/about" and "/contact" routes so each still gets its
+  // own <title>/meta/canonical via <Seo> below.
+  const HomePage = ({ initialScrollTarget }) => {
     const rootRef = useRef(null);
     const preloaderRef = useRef(null);
     const [isLoading, setIsLoading] = useState(true);
@@ -479,7 +497,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
     // Checkout states
     const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-    const [orderConfirmation, setOrderConfirmation] = useState(null); // To show success/error message after order
 
     // Function to handle smooth scrolling to sections (Existing)
     const scrollToSection = (id) => {
@@ -488,6 +505,14 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         element.scrollIntoView({ behavior: 'smooth' });
       }
      };
+
+    // "/about" and "/contact" routes render this same page pre-scrolled to their section.
+    useEffect(() => {
+      if (initialScrollTarget) {
+        scrollToSection(initialScrollTarget);
+      }
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [initialScrollTarget]);
 
     // Functions to manage the image popup with refined delays (Existing)
     const handleImageHover = (imageUrl) => {
@@ -581,42 +606,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       setIsCheckoutOpen(true); // Open checkout form
     };
 
-    // Handle checkout form submission (Now sending to backend)
-    const handleCheckoutSubmit = async (orderDetails) => {
-      try {
-        const response = await fetch(`${API_URL}/orders`, { // Ensure this matches your backend URL
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            name: orderDetails.name,
-            address: orderDetails.address,
-            phone: orderDetails.phone,
-            paymentMethod: orderDetails.paymentMethod,
-            items: orderDetails.wishlistItems,
-            totalprice: orderDetails.totalPrice,
-          }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to place order');
-        }
-
-        const result = await response.json();
-        setOrderConfirmation(result.message || 'Your order has been placed successfully!');
-        setIsCheckoutOpen(false); // Close checkout form
-        setWishlist([]); // Clear local wishlist state
-        setTimeout(() => setOrderConfirmation(null), 5000); // Clear confirmation message after 5 seconds
-
-      } catch (error) {
-        console.error("Error placing order:", error);
-        setOrderConfirmation(`Failed to place order: ${error.message}`);
-        setTimeout(() => setOrderConfirmation(null), 5000);
-      }
-    };
-
     // Handle contact form submission (Now sending to backend)
     const handleContactSubmit = async (e) => {
       e.preventDefault();
@@ -648,6 +637,13 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         // Using a simple alert here, consider a custom modal for better UX
         alert(result.message || 'Your message has been sent successfully!');
         e.target.reset(); // Clear the form
+
+        sendWeb3FormsNotification({
+          subject: `New contact message from ${name}`,
+          name,
+          email,
+          message,
+        });
       } catch (error) {
         console.error("Error sending message:", error);
         // Using a simple alert here, consider a custom modal for better UX
@@ -655,115 +651,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       }
     };
 
-
-    // Array of all products with their categories (Existing)
-    const allProducts = [
-      {
-        name: "Rose Heart Bloom",
-        price: "Rs. 1199",
-        description: "A beautifully crafted heart-shaped pendant, symbolizing love and passion, with a delicate rose dried flower embedded within.",
-        imageUrl: "/HeartShaped.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Diamond Dewdrop Jhumka",
-        price: "Rs. 1499",
-        description: "Dazzling diamond-shaped resin jhumkas – a modern take on a classic, designed to shine.",
-        imageUrl: "/DiamondJhumka.jpg",
-        category: "jhumkas",
-      },
-      {
-        name: "Petal Whisper Ring",
-        price: "Rs. 799",
-        description: "A delicate ring featuring a vibrant pink flower encased in crystal-clear resin, a miniature garden for your finger.",
-        imageUrl: "/CircleRing.jpg",
-        category: "rings",
-      },
-      {
-        name: "Free Spirit Charm",
-        price: "Rs. 699",
-        description: "A delightful bird-shaped charm pendant, perfect for adding a touch of whimsical nature to any outfit.",
-        imageUrl: "/BirdShaped.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Love's Embrace Ring",
-        price: "Rs. 799",
-        description: "A charming ring featuring a vibrant red heart, perfect for expressing love and affection.",
-        imageUrl: "/HeartRing.jpg",
-        category: "rings",
-      },
-      {
-        name: "Royal Petal Rectangle",
-        price: "Rs. 1199",
-        description: "A stylish rectangular pendant showcasing a preserved purple flower and shimmering gold flakes – a perfect blend of nature and elegance.",
-        imageUrl: "/RectanglePendant.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Rainbow Bloom Bar",
-        price: "Rs. 1499",
-        description: "A vibrant rectangular pendant showcasing a beautiful arrangement of colorful dried flowers, a miniature garden to wear.",
-        imageUrl: "/RectanglePendant2.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Crimson Daisy Delight",
-        price: "Rs. 1199",
-        description: "A striking round pendant featuring a delicate white daisy set against a vibrant red glitter background, a bold statement piece.",
-        imageUrl: "/RoundPendant.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Ruby Petal Jhumkas",
-        price: "Rs. 1499",
-        description: "Stunning circular jhumkas featuring vibrant red/pink dried petals and shimmering gold flakes, framed by intricate antique gold detailing.",
-        imageUrl: "/CircleJhumka.jpg",
-        category: "jhumkas",
-      },
-      {
-        name: "Silver Blossom Jhumkas",
-        price: "Rs. 1499",
-        description: "Vibrant circular jhumkas featuring striking blue dried flowers set against a crisp white background, framed by intricate silver detailing and ghungroo bells.",
-        imageUrl: "/CircleJhumka2.jpg",
-        category: "jhumkas",
-      },
-      {
-        name: "Pink Serenity Pendant",
-        price: "Rs. 1199",
-        description: "An elegant oval pendant featuring a delicate pink flower beautifully preserved in clear resin, framed by a classic gold-toned bezel.",
-        imageUrl: "/OvalPendant.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Crystal Heart Glow",
-        price: "Rs. 799",
-        description: "A captivating heart-shaped pendant featuring a luminous white/iridescent center, beautifully framed by a sparkling crystal border. A delicate piece for timeless elegance.",
-        imageUrl: "/HeartCharm.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Blush Petal Charm",
-        price: "Rs. 799",
-        description: "A delicate flower-shaped pendant featuring soft pink petals and a subtle blue/purple center, perfect for adding a touch of gentle charm to your look.",
-        imageUrl: "/FlowerCharm.jpg",
-        category: "pendants",
-      },
-      {
-        name: "Enchanted Butterfly Pendant",
-        price: "Rs. 999",
-        description: "A mesmerizing butterfly-shaped pendant, featuring iridescent blue and green glitter that shimmers with every movement, capturing the magic of flight.",
-        imageUrl: "Butterfly.jpg", // Using the uploaded image
-        category: "pendants",
-      },
-      {
-        name: "Midnight Bloom Heart",
-        price: "Rs. 1299",
-        description: "A captivating heart-shaped pendant featuring a vibrant yellow dried flower set against a deep, contrasting black background. A bold and beautiful statement piece.",
-        imageUrl: "BlackHeart.jpg", // Using the uploaded image
-        category: "pendants",
-      },
-    ];
 
     // Real, derived (not fabricated) numbers used for the About section stat counters
     const categoryCount = new Set(allProducts.map((p) => p.category)).size;
@@ -796,6 +683,12 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       });
     }
 
+    const pageMeta = initialScrollTarget === 'about'
+      ? { title: 'About Us', description: 'Learn about The Trinket Bloom — handcrafted resin art jewelry made with passion.', path: '/about' }
+      : initialScrollTarget === 'contact'
+      ? { title: 'Contact Us', description: 'Get in touch with The Trinket Bloom for custom orders, questions, or feedback.', path: '/contact' }
+      : { title: 'Handcrafted Resin Art Jewelry', description: 'The Trinket Bloom - handcrafted pendants, jhumkas, rings, and bracelets made from premium resin art.', path: '/' };
+
     return (
       <div ref={rootRef} style={{
         minHeight: '100vh',
@@ -804,6 +697,12 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         color: '#333',
         boxSizing: 'border-box', // Global box-sizing
       }}>
+        <Seo
+          title={pageMeta.title}
+          description={pageMeta.description}
+          path={pageMeta.path}
+          jsonLd={pageMeta.path === '/' ? buildOrganizationJsonLd() : undefined}
+        />
         {/* Animated intro curtain (Existing pattern: conditionally rendered overlay) */}
         {isLoading && <Preloader ref={preloaderRef} />}
 
@@ -954,28 +853,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             </li>
           </ul>
         </nav>
-
-        {/* Order Confirmation message (NEW) */}
-        {orderConfirmation && (
-          <div style={{
-            position: 'fixed',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            backgroundColor: '#4CAF50', // Green for success
-            color: 'white',
-            padding: '1.2rem', // Adjusted padding
-            borderRadius: '1rem',
-            boxShadow: '0 4px 8px rgba(0, 0, 0, 0.2)',
-            zIndex: 1003,
-            textAlign: 'center',
-            fontSize: '1rem', // Adjusted font size
-            maxWidth: '90%', // Ensure it fits on small screens
-            boxSizing: 'border-box',
-          }}>
-            {orderConfirmation}
-          </div>
-        )}
 
 
         {/* Hero Section (Responsive adjustments) */}
@@ -1209,6 +1086,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
                 currentProducts.map((product, index) => (
                   <ProductCard
                     key={index}
+                    slug={product.slug}
                     name={product.name}
                     price={product.price}
                     description={product.description}
@@ -1540,7 +1418,6 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
           <CheckoutForm
             wishlistItems={wishlist}
             totalPrice={wishlist.reduce((sum, item) => parseFloat(item.price.replace('Rs. ', '')) * item.quantity, 0)}
-            onSubmit={handleCheckoutSubmit}
             onClose={() => setIsCheckoutOpen(false)}
           />
         )}
@@ -1590,7 +1467,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
 
 
   // Product Card Component (Existing with quantity selector, responsive adjustments)
-  const ProductCard = ({ name, price, description, imageUrl, customStyle, imageCustomStyle, onImageHover, onImageLeave, onAddToWishlist, isProductInWishlist }) => {
+  const ProductCard = ({ slug, name, price, description, imageUrl, customStyle, imageCustomStyle, onImageHover, onImageLeave, onAddToWishlist, isProductInWishlist }) => {
     const [quantity, setQuantity] = useState(1); // State for product quantity
 
     return (
@@ -1608,7 +1485,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
           ...customStyle
         }}
       >
-        <div className="card-image-wrap">
+        <Link to={`/product/${slug}`} className="card-image-wrap" style={{ display: 'block', textDecoration: 'none' }}>
           <img
             src={imageUrl}
             alt={name}
@@ -1624,7 +1501,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             onError={(e) => { e.target.onerror = null; e.target.src = "https://placehold.co/400x300/CCCCCC/333333?text=Product+Image"; }}
           />
           <div className="card-image-overlay">View Details</div>
-        </div>
+        </Link>
         <div style={{ padding: '1rem' }}> {/* Adjusted padding */}
           <h3 style={{
             fontSize: '1.2rem', // Adjusted font size
@@ -1698,6 +1575,19 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       </div>
     );
   };
+
+  // Thin routing shell: "/" is the storefront, "/about" and "/contact" reuse
+  // it pre-scrolled to their section, and "/product/:slug" is the one route
+  // with genuinely unique content per URL.
+  const App = () => (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/about" element={<HomePage initialScrollTarget="about" />} />
+      <Route path="/contact" element={<HomePage initialScrollTarget="contact" />} />
+      <Route path="/product/:slug" element={<ProductDetailPage />} />
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  );
 
   export default App;
 
