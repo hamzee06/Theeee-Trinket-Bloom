@@ -19,8 +19,11 @@ app.get('/', (req, res) => {
 });
 
 // Attach the routers to their respective endpoints.
+// Keep both the current routes and the legacy /api aliases for older pages/scripts.
 app.use('/orders', ordersRouter);
+app.use('/api/orders', ordersRouter);
 app.use('/feedback', feedbackRouter);
+app.use('/api/feedback', feedbackRouter);
 
 // Catch-all for any unhandled routes
 app.use((req, res, next) => {

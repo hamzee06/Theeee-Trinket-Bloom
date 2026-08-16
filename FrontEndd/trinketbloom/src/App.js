@@ -24,11 +24,6 @@
     </div>
   ));
 
-  // API URL - use production backend in production, otherwise use env variable or localhost
-  const API_URL = process.env.NODE_ENV === 'production' 
-    ? 'https://trinket-bloom-backend.vercel.app'
-    : (process.env.REACT_APP_API_URL || 'http://localhost:3001');
-
   // Image Popup Component (Existing, with responsiveness adjustments)
   const ImagePopup = ({ imageUrl, onClose }) => {
     if (!imageUrl) return null;
@@ -106,43 +101,26 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
             totalprice: totalPrice, // Send the totalPrice from props
         };
 
-        console.log('Submitting order to:', `${API_URL}/orders`);
-        console.log('Order data:', orderData);
+        console.log('Submitting order via Web3Forms:', orderData);
 
         try {
-            const response = await fetch(`${API_URL}/orders`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify(orderData),
+            await sendWeb3FormsNotification({
+                subject: `New order from ${name}`,
+                name,
+                address,
+                phone,
+                paymentMethod,
+                items: wishlistItems
+                    .map((item) => `${item.quantity}x ${item.name} - ${item.price} each`)
+                    .join('\n'),
+                totalPrice: `Rs. ${totalPrice.toFixed(2)}`,
             });
 
-            console.log('Response status:', response.status);
-            const data = await response.json();
-            console.log('Response data:', data);
-            if (response.ok) {
-                // Instead of using a browser alert, we set a success message.
-                setErrorMessage('Order created successfully!');
-                // You can add a delay before closing the modal for the user to see the success message.
-                setTimeout(onClose, 2000);
-
-                sendWeb3FormsNotification({
-                    subject: `New order from ${name}`,
-                    name,
-                    address,
-                    phone,
-                    paymentMethod,
-                    items: wishlistItems
-                        .map((item) => `${item.quantity}x ${item.name} - ${item.price} each`)
-                        .join('\n'),
-                    totalPrice: `Rs. ${totalPrice.toFixed(2)}`,
-                });
-            } else {
-                setErrorMessage(data.error || 'Something went wrong.');
-            }
+            setErrorMessage('Order submitted successfully! We will contact you soon.');
+            setTimeout(onClose, 2000);
         } catch (error) {
             console.error('Error submitting order:', error);
-            console.error('Error details:', error.message, error.stack);
-            setErrorMessage('Server error. Please try again.');
+            setErrorMessage('Failed to send order. Please try again.');
         }
     };
 
@@ -631,7 +609,8 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       setIsCheckoutOpen(true); // Open checkout form
     };
 
-    // Handle contact form submission (Now sending to backend)
+    // Handle contact form submission via Web3Forms.
+    // This form does not require the database backend.
     const handleContactSubmit = async (e) => {
       e.preventDefault();
       const name = e.target.name.value;
@@ -639,40 +618,23 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       const message = e.target.message.value;
 
       if (!name || !email || !message) {
-        // Using a simple alert here, consider a custom modal for better UX
         alert('Please fill in all fields for your message.');
         return;
       }
 
       try {
-        const response = await fetch(`${API_URL}/feedback`, { // Ensure this matches your backend URL
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ name, email, message }),
-        });
-
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.message || 'Failed to send message');
-        }
-
-        const result = await response.json();
-        // Using a simple alert here, consider a custom modal for better UX
-        alert(result.message || 'Your message has been sent successfully!');
-        e.target.reset(); // Clear the form
-
-        sendWeb3FormsNotification({
+        await sendWeb3FormsNotification({
           subject: `New contact message from ${name}`,
           name,
           email,
           message,
         });
+
+        alert('Your message has been sent successfully!');
+        e.target.reset();
       } catch (error) {
-        console.error("Error sending message:", error);
-        // Using a simple alert here, consider a custom modal for better UX
-        alert(`Failed to send message: ${error.message}`);
+        console.error('Error sending message:', error);
+        alert('Failed to send message. Please try again later.');
       }
     };
 
@@ -895,7 +857,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
         }}>
           <img
             className="hero-bg-image"
-            src="/your_hero_background_image.jpg" // Placeholder for hero background
+            src="/image.png"
             alt="Resin Art Background"
             style={{
               position: 'absolute',
