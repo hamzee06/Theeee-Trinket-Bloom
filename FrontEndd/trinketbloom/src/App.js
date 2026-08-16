@@ -13,7 +13,7 @@
   import Seo from './components/Seo';
   import ProductDetailPage from './pages/ProductDetailPage';
   import { allProducts } from './data/products';
-  import { buildOrganizationJsonLd } from './constants/site';
+  import { buildOrganizationJsonLd, buildCategoryJsonLd } from './constants/site';
   import { sendWeb3FormsNotification } from './web3forms';
 
   // Animated intro curtain shown once on first load (Existing pattern: small standalone component)
@@ -670,11 +670,47 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
       });
     }
 
+    const categoryPageMeta = selectedCategory === 'all'
+      ? {
+          title: 'Handmade Resin Jewelry for Women | The Trinket Bloom',
+          description: 'Discover handcrafted resin jewelry for women, from statement pendants to elegant rings and jhumkas. Shop now for one-of-a-kind pieces.',
+          path: '/'
+        }
+      : selectedCategory === 'pendants'
+      ? {
+          title: 'Handmade Resin Pendants for Women | The Trinket Bloom',
+          description: 'Shop handmade resin pendants for women with unique floral designs, dreamy colors, and statement-worthy craftsmanship.',
+          path: '/'
+        }
+      : selectedCategory === 'rings'
+      ? {
+          title: 'Handmade Resin Rings for Women | The Trinket Bloom',
+          description: 'Explore handmade resin rings for women featuring colorful floral details and modern, romantic statement styles.',
+          path: '/'
+        }
+      : {
+          title: 'Handmade Resin Jhumkas for Festive Style | The Trinket Bloom',
+          description: 'Discover handmade resin jhumkas with vibrant floral details and elegant festive charm for everyday and occasion wear.',
+          path: '/'
+        };
+
     const pageMeta = initialScrollTarget === 'about'
-      ? { title: 'About Us', description: 'Learn about The Trinket Bloom — handcrafted resin art jewelry made with passion.', path: '/about' }
+      ? {
+          title: 'About The Trinket Bloom | Handmade Jewelry Brand',
+          description: 'Learn about our handmade resin jewelry brand, craftsmanship, and story behind every one-of-a-kind piece made with love.',
+          path: '/about'
+        }
       : initialScrollTarget === 'contact'
-      ? { title: 'Contact Us', description: 'Get in touch with The Trinket Bloom for custom orders, questions, or feedback.', path: '/contact' }
-      : { title: 'Handcrafted Resin Art Jewelry', description: 'The Trinket Bloom - handcrafted pendants, jhumkas, rings, and bracelets made from premium resin art.', path: '/' };
+      ? {
+          title: 'Contact The Trinket Bloom | Custom Jewelry Orders',
+          description: 'Get in touch for custom orders, questions, or collaborations. We’d love to help you find your perfect handmade resin piece.',
+          path: '/contact'
+        }
+      : categoryPageMeta;
+
+    const pageJsonLd = selectedCategory === 'all'
+      ? buildOrganizationJsonLd()
+      : buildCategoryJsonLd(selectedCategory, currentProducts);
 
     return (
       <div ref={rootRef} style={{
@@ -688,7 +724,7 @@ const CheckoutForm = ({ wishlistItems, totalPrice, onSubmit, onClose }) => {
           title={pageMeta.title}
           description={pageMeta.description}
           path={pageMeta.path}
-          jsonLd={pageMeta.path === '/' ? buildOrganizationJsonLd() : undefined}
+          jsonLd={pageMeta.path === '/' ? pageJsonLd : undefined}
         />
         {/* Animated intro curtain (Existing pattern: conditionally rendered overlay) */}
         {isLoading && <Preloader ref={preloaderRef} />}

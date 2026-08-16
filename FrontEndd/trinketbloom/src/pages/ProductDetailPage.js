@@ -22,6 +22,15 @@ const ProductDetailPage = () => {
     ? product.imageUrl
     : `${SITE_URL}${product.imageUrl.startsWith('/') ? '' : '/'}${product.imageUrl}`;
 
+  const categoryLabel = product.category === 'pendants'
+    ? 'Handmade Resin Pendant'
+    : product.category === 'rings'
+    ? 'Handmade Resin Ring'
+    : 'Handmade Resin Jhumka';
+
+  const productSeoTitle = `${product.name} | ${categoryLabel}`;
+  const productSeoDescription = `Shop ${product.name}, a handcrafted ${product.category.slice(0, -1)} design by The Trinket Bloom. ${product.description.replace(/\.$/, '')}.`;
+
   const jsonLd = {
     '@context': 'https://schema.org/',
     '@type': 'Product',
@@ -41,8 +50,8 @@ const ProductDetailPage = () => {
   return (
     <div style={{ minHeight: '100vh', background: '#800080', fontFamily: 'Inter, sans-serif', boxSizing: 'border-box' }}>
       <Seo
-        title={product.name}
-        description={product.description}
+        title={productSeoTitle}
+        description={productSeoDescription}
         path={`/product/${product.slug}`}
         ogImage={imageAbsoluteUrl}
         jsonLd={jsonLd}
